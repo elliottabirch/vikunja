@@ -134,6 +134,25 @@ describe('SingleTaskInProject', () => {
 			expect(wrapper.find('.collapse-toggle').exists()).toBe(false)
 		})
 
+		it('renders a spacer instead of a toggle for a leaf row in a list, and neither without allTasks', () => {
+			const tasks = [task(1, [2]), task(2)]
+			const leaf = mount(SingleTaskInProject, {
+				props: {theTask: tasks[1], allTasks: tasks},
+				global: globalOptions(),
+			})
+			expect(leaf.find('.collapse-toggle').exists()).toBe(false)
+			const spacer = leaf.find('.collapse-toggle-spacer')
+			expect(spacer.exists()).toBe(true)
+			expect(spacer.attributes('aria-hidden')).toBe('true')
+
+			const standalone = mount(SingleTaskInProject, {
+				props: {theTask: tasks[1]},
+				global: globalOptions(),
+			})
+			expect(standalone.find('.collapse-toggle').exists()).toBe(false)
+			expect(standalone.find('.collapse-toggle-spacer').exists()).toBe(false)
+		})
+
 		it('renders a collapse toggle when allTasks contains the subtask', () => {
 			const wrapper = mountTree([task(1, [2]), task(2)])
 

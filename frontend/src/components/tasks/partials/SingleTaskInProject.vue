@@ -23,6 +23,11 @@
 				<Icon icon="chevron-down" />
 			</button>
 			<span
+				v-else-if="allTasks.length > 0"
+				class="collapse-toggle-spacer"
+				aria-hidden="true"
+			/>
+			<span
 				v-tooltip="!canMarkAsDone ? $t('task.readOnlyCheckbox') : ''"
 				class="is-inline-flex is-align-items-center"
 			>
@@ -687,6 +692,10 @@ defineExpose({
 	border-radius: $radius;
 	transition: color 0.2s ease;
 	margin-inline-start: 0.5rem;
+	// The checkbox beside it has a deliberate 44px invisible hit target that reaches into this box;
+	// stacking above it keeps every click inside the arrow's own 40px box on the arrow.
+	position: relative;
+	z-index: 2;
 
 	:deep(svg) {
 		transition: transform 0.2s ease;
@@ -702,14 +711,24 @@ defineExpose({
 	}
 }
 
-.collapse-toggle-left {
+.collapse-toggle-left,
+.collapse-toggle-spacer {
 	margin-inline-start: 0;
-	margin-inline-end: 0.5rem;
+	// Leaves a neutral gap before the checkbox's wider hit target starts.
+	margin-inline-end: 1.25rem;
 	order: -1;
 
 	@media (width <= 768px) {
 		display: none;
 	}
+}
+
+// Takes the left toggle's place in rows that have none, so sibling checkboxes line up.
+.collapse-toggle-spacer {
+	inline-size: 2.5rem;
+	block-size: 0;
+	flex-shrink: 0;
+	pointer-events: none;
 }
 
 :deep(.popup) {
