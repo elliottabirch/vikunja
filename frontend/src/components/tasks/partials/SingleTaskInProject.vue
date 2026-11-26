@@ -12,6 +12,15 @@
 			@click="openTaskDetail"
 			@keyup.enter="openTaskDetail"
 		>
+			<button
+				v-if="hasSubtasks"
+				class="collapse-toggle collapse-toggle-left"
+				:class="{ 'is-collapsed': isCollapsed }"
+				:aria-label="isCollapsed ? $t('task.expandSubtasks') : $t('task.collapseSubtasks')"
+				@click.stop="toggleCollapse"
+			>
+				<Icon icon="chevron-down" />
+			</button>
 			<span
 				v-tooltip="!canMarkAsDone ? $t('task.readOnlyCheckbox') : ''"
 				class="is-inline-flex is-align-items-center"
@@ -189,8 +198,17 @@
 				/>
 			</BaseButton>
 			<slot />
+			<button
+				v-if="hasSubtasks"
+				class="collapse-toggle"
+				:class="{ 'is-collapsed': isCollapsed }"
+				:aria-label="isCollapsed ? $t('task.expandSubtasks') : $t('task.collapseSubtasks')"
+				@click.stop="toggleCollapse"
+			>
+				<Icon icon="chevron-down" />
+			</button>
 		</div>
-		<template v-if="expandsSubtasks && typeof task.related_tasks?.subtask !== 'undefined'">
+		<template v-if="expandsSubtasks && !isCollapsed && typeof task.related_tasks?.subtask !== 'undefined'">
 			<template v-for="subtask in task.related_tasks.subtask">
 				<template v-if="getTaskById(subtask.id)">
 					<single-task-in-project
@@ -250,6 +268,7 @@ import {isEditorContentEmpty} from '@/helpers/editorContentEmpty'
 import {TASK_REPEAT_MODES} from '@/types/IRepeatMode'
 import {useGlobalNow} from '@/composables/useGlobalNow'
 import {useDelayedLoading} from '@/composables/useDelayedLoading'
+import {useSubtasksCollapsed} from '@/composables/useCollapsedSubtasks'
 
 const props = withDefaults(defineProps<{
 	theTask: ITask,
@@ -269,6 +288,12 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
 	'taskUpdated': [task: ITask],
 }>()
+
+const isCollapsed = useSubtasksCollapsed(() => task.value.id)
+
+function toggleCollapse() {
+	isCollapsed.value = !isCollapsed.value
+}
 
 function getTaskById(taskId: number | undefined): ITask | undefined {
 	if (typeof props.allTasks === 'undefined' || props.allTasks.length === 0) {
@@ -300,6 +325,9 @@ function claimSubtaskExpansion(taskId: number | undefined): boolean {
 }
 // eslint-disable-next-line vue/no-setup-props-reactivity-loss -- claim is intentionally fixed per instance
 const expandsSubtasks = claimSubtaskExpansion(props.theTask.id)
+
+// Only the instance that actually renders the subtasks gets a toggle, otherwise it would do nothing visible.
+const hasSubtasks = computed(() => expandsSubtasks && (task.value.related_tasks?.subtask?.length ?? 0) > 0)
 
 const isRepeating = computed(() => (task.value.repeat_after ?? 0) > 0
 	|| ((task.value.repeat_after ?? 0) === 0
@@ -637,6 +665,44 @@ defineExpose({
 
 .subtask-nested {
 	margin-inline-start: 1.75rem;
+}
+
+.collapse-toggle {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	inline-size: 20px;
+	block-size: 20px;
+	border: none;
+	background: transparent;
+	color: var(--grey-400);
+	cursor: pointer;
+	border-radius: $radius;
+	transition: color 0.2s ease;
+	margin-inline-start: 0.5rem;
+
+	:deep(svg) {
+		transition: transform 0.2s ease;
+	}
+
+	&:hover {
+		color: var(--grey-600);
+		background: var(--grey-100);
+	}
+
+	&.is-collapsed :deep(svg) {
+		transform: rotate(-90deg);
+	}
+}
+
+.collapse-toggle-left {
+	margin-inline-start: 0;
+	margin-inline-end: 0.5rem;
+	order: -1;
+
+	@media (width <= 768px) {
+		display: none;
+	}
 }
 
 :deep(.popup) {

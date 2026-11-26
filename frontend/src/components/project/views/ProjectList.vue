@@ -17,6 +17,15 @@
 					:project-id="projectId"
 					@update:modelValue="loadTasks()"
 				/>
+				<XButton
+					v-if="hasTasksWithSubtasks"
+					variant="secondary"
+					icon="chevron-down"
+					class="collapse-all-btn"
+					:class="{ 'is-collapsed': allSubtasksCollapsed }"
+					:title="allSubtasksCollapsed ? $t('task.expandAllSubtasks') : $t('task.collapseAllSubtasks')"
+					@click="toggleAllSubtasks"
+				/>
 			</div>
 		</template>
 
@@ -105,6 +114,7 @@ import {ref, computed, nextTick, onMounted, onBeforeUnmount, watch, toRef} from 
 import {draggableFor} from '@/components/base/Draggable'
 
 import ProjectWrapper from '@/components/project/ProjectWrapper.vue'
+import {useCollapseAllSubtasks} from '@/composables/useCollapsedSubtasks'
 import ButtonLink from '@/components/misc/ButtonLink.vue'
 import AddTask from '@/components/tasks/AddTask.vue'
 import SingleTaskInProject from '@/components/tasks/partials/SingleTaskInProject.vue'
@@ -161,6 +171,12 @@ const {
 		: ['subtasks', 'comment_count', 'is_unread'],
 )
 const showLoading = useDelayedLoading(loading)
+
+const {
+	allCollapsed: allSubtasksCollapsed,
+	hasTasksWithSubtasks,
+	toggleAll: toggleAllSubtasks,
+} = useCollapseAllSubtasks(allTasks)
 
 const positionMutation = useUpdateTaskPositionMutation()
 
@@ -353,6 +369,20 @@ onBeforeUnmount(() => {
 
 	:deep(.popup) {
 		max-inline-size: 300px;
+	}
+}
+
+.collapse-all-btn {
+	:deep(svg) {
+		transition: transform 0.2s ease;
+	}
+
+	&.is-collapsed {
+		color: var(--primary);
+
+		:deep(svg) {
+			transform: rotate(-90deg);
+		}
 	}
 }
 
