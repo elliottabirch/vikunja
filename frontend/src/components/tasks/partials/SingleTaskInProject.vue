@@ -14,6 +14,7 @@
 		>
 			<button
 				v-if="hasSubtasks"
+				type="button"
 				class="collapse-toggle collapse-toggle-left"
 				:class="{ 'is-collapsed': isCollapsed }"
 				:aria-label="isCollapsed ? $t('task.expandSubtasks') : $t('task.collapseSubtasks')"
@@ -200,6 +201,7 @@
 			<slot />
 			<button
 				v-if="hasSubtasks"
+				type="button"
 				class="collapse-toggle"
 				:class="{ 'is-collapsed': isCollapsed }"
 				:aria-label="isCollapsed ? $t('task.expandSubtasks') : $t('task.collapseSubtasks')"
@@ -326,8 +328,10 @@ function claimSubtaskExpansion(taskId: number | undefined): boolean {
 // eslint-disable-next-line vue/no-setup-props-reactivity-loss -- claim is intentionally fixed per instance
 const expandsSubtasks = claimSubtaskExpansion(props.theTask.id)
 
-// Only the instance that actually renders the subtasks gets a toggle, otherwise it would do nothing visible.
-const hasSubtasks = computed(() => expandsSubtasks && (task.value.related_tasks?.subtask?.length ?? 0) > 0)
+// Only an instance that actually renders subtasks gets a toggle, otherwise it would do nothing visible:
+// it must expand subtasks and at least one of them must be in allTasks (never the case without that prop).
+const hasSubtasks = computed(() => expandsSubtasks
+	&& (task.value.related_tasks?.subtask?.some(subtask => getTaskById(subtask.id) !== undefined) ?? false))
 
 const isRepeating = computed(() => (task.value.repeat_after ?? 0) > 0
 	|| ((task.value.repeat_after ?? 0) === 0
@@ -671,8 +675,11 @@ defineExpose({
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	inline-size: 20px;
-	block-size: 20px;
+	// 40px hit area; the icon keeps its drawn size. Negative block margins keep the row height.
+	inline-size: 2.5rem;
+	block-size: 2.5rem;
+	flex-shrink: 0;
+	margin-block: -0.75rem;
 	border: none;
 	background: transparent;
 	color: var(--grey-400);

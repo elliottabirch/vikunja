@@ -25,7 +25,9 @@
 					:class="{ 'is-collapsed': allSubtasksCollapsed }"
 					:title="allSubtasksCollapsed ? $t('task.expandAllSubtasks') : $t('task.collapseAllSubtasks')"
 					@click="toggleAllSubtasks"
-				/>
+				>
+					{{ allSubtasksCollapsed ? $t('task.expandAll') : $t('task.collapseAll') }}
+				</XButton>
 			</div>
 		</template>
 

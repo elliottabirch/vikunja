@@ -326,57 +326,62 @@ test.describe('Project View List', () => {
 		return projects[0]
 	}
 
-	test('Should collapse and expand the subtasks of a single task', async ({authenticatedPage: page}) => {
+	test('Should expand and collapse the subtasks of a single task', async ({authenticatedPage: page}) => {
 		const project = await createParentWithSubtasks()
 		await page.goto(`/projects/${project.id}/${project.views[0].id}`)
 
-		await expect(page.locator('.subtask-nested')).toHaveCount(2)
+		// subtasks start collapsed
+		await expect(page.locator('.tasks')).toContainText('Parent Task')
+		await expect(page.locator('.subtask-nested')).toHaveCount(0)
 
 		// only the parent task has a toggle
 		const toggle = page.locator('.single-task .collapse-toggle:not(.collapse-toggle-left)')
 		await expect(toggle).toHaveCount(1)
-		await expect(toggle).toHaveAttribute('aria-label', 'Collapse subtasks')
-
-		await toggle.click()
-		await expect(page.locator('.subtask-nested')).toHaveCount(0)
 		await expect(toggle).toHaveAttribute('aria-label', 'Expand subtasks')
 
 		await toggle.click()
 		await expect(page.locator('.subtask-nested')).toHaveCount(2)
+		await expect(toggle).toHaveAttribute('aria-label', 'Collapse subtasks')
+
+		await toggle.click()
+		await expect(page.locator('.subtask-nested')).toHaveCount(0)
 	})
 
-	test('Should collapse all subtasks and stay in sync with a task expanded on its own', async ({authenticatedPage: page}) => {
+	test('Should expand all subtasks and stay in sync with a task collapsed on its own', async ({authenticatedPage: page}) => {
 		const project = await createParentWithSubtasks()
 		await page.goto(`/projects/${project.id}/${project.views[0].id}`)
 
-		await expect(page.locator('.subtask-nested')).toHaveCount(2)
+		await expect(page.locator('.tasks')).toContainText('Parent Task')
+		await expect(page.locator('.subtask-nested')).toHaveCount(0)
 
 		const collapseAll = page.locator('.collapse-all-btn')
+		await expect(collapseAll).toContainText('Expand all')
 		await collapseAll.click()
+		await expect(page.locator('.subtask-nested')).toHaveCount(2)
+		await expect(collapseAll).toHaveAttribute('title', 'Collapse all subtasks')
+		await expect(collapseAll).toContainText('Collapse all')
+
+		// collapsing the only expandable task means everything is collapsed again, so the
+		// button expands instead of collapsing
+		await page.locator('.single-task .collapse-toggle:not(.collapse-toggle-left)').click()
 		await expect(page.locator('.subtask-nested')).toHaveCount(0)
 		await expect(collapseAll).toHaveAttribute('title', 'Expand all subtasks')
 
-		// expanding a single task means not everything is collapsed anymore, so the
-		// button collapses again instead of expanding
-		await page.locator('.single-task .collapse-toggle:not(.collapse-toggle-left)').click()
-		await expect(page.locator('.subtask-nested')).toHaveCount(2)
-		await expect(collapseAll).toHaveAttribute('title', 'Collapse all subtasks')
-
 		await collapseAll.click()
-		await expect(page.locator('.subtask-nested')).toHaveCount(0)
+		await expect(page.locator('.subtask-nested')).toHaveCount(2)
 	})
 
-	test('Should persist the collapsed state over a reload', async ({authenticatedPage: page}) => {
+	test('Should persist the expanded state over a reload', async ({authenticatedPage: page}) => {
 		const project = await createParentWithSubtasks()
 		await page.goto(`/projects/${project.id}/${project.views[0].id}`)
 
 		await page.locator('.single-task .collapse-toggle:not(.collapse-toggle-left)').click()
-		await expect(page.locator('.subtask-nested')).toHaveCount(0)
+		await expect(page.locator('.subtask-nested')).toHaveCount(2)
 
 		await page.reload()
 
 		await expect(page.locator('.tasks')).toContainText('Parent Task')
-		await expect(page.locator('.subtask-nested')).toHaveCount(0)
+		await expect(page.locator('.subtask-nested')).toHaveCount(2)
 	})
 
 	test('Should not show the collapse all button without any subtasks', async ({authenticatedPage: page}) => {

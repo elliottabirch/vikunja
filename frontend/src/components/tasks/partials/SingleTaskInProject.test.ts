@@ -6,6 +6,10 @@ import {QueryClient, VueQueryPlugin} from '@tanstack/vue-query'
 
 import type {Task as ITask} from '@/client/generated'
 
+// Subtasks start collapsed. The rendering tests below need them expanded, and the
+// storage is read once when the composable is first imported.
+vi.hoisted(() => localStorage.setItem('expandedSubtasks', JSON.stringify(Object.fromEntries(Array.from({length: 40}, (_, i) => [i + 1, true])))))
+
 const sdk = vi.hoisted(() => ({
 	patchTasksRead: vi.fn(),
 }))
@@ -120,6 +124,21 @@ describe('SingleTaskInProject', () => {
 		function renderedTaskIds(wrapper: ReturnType<typeof mountTree>) {
 			return wrapper.findAll('[data-task-id]').map(el => Number(el.attributes('data-task-id')))
 		}
+
+		it('renders no collapse toggle without allTasks, although the task has subtask relations', () => {
+			const wrapper = mount(SingleTaskInProject, {
+				props: {theTask: task(1, [2, 3])},
+				global: globalOptions(),
+			})
+
+			expect(wrapper.find('.collapse-toggle').exists()).toBe(false)
+		})
+
+		it('renders a collapse toggle when allTasks contains the subtask', () => {
+			const wrapper = mountTree([task(1, [2]), task(2)])
+
+			expect(wrapper.find('.collapse-toggle').exists()).toBe(true)
+		})
 
 		it('renders each task of a diamond graph a bounded number of times', () => {
 			// Every task of a level is a subtask of every task of the level above.

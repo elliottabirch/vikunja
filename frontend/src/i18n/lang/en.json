@@ -1127,6 +1127,8 @@
     "expandSubtasks": "Expand subtasks",
     "collapseAllSubtasks": "Collapse all subtasks",
     "expandAllSubtasks": "Expand all subtasks",
+    "collapseAll": "Collapse all",
+    "expandAll": "Expand all",
     "show": {
       "titleCurrent": "Current Tasks",
       "noDates": "Show tasks without date",
